@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  // The development badge sits in the bottom corner, right on top of the
+  // games' keyboards and buttons on a phone-sized screen. Errors still show.
+  devIndicators: false,
   turbopack: {
     rules: {
       "*.css": {

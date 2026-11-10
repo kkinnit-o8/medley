@@ -102,6 +102,8 @@ export function RunShell({ initial, nickname, streak }: { initial: RunSnapshot; 
           <Handoff game={finished.game} next={finished.next} total={finished.run.total} leaving={leaving} onContinue={moveOn} />
         ) : (
           <Suspense fallback={<div className="flex-1" />}>
+            {/* gameComponent() hands back the same cached component for an id, so nothing is re-created here. */}
+            {/* eslint-disable-next-line react-hooks/static-components */}
             <Game key={stage.id} view={stage.view} play={play} busy={busy} draftKey={`${run.day}:${stage.id}`} />
           </Suspense>
         )}

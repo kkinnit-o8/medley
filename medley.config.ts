@@ -18,7 +18,7 @@ export const config = {
    * Today's games, in playing order. Each id is a folder under /games.
    * Adding a game = add its folder, then add its id here.
    */
-  lineup: ["example"],
+  lineup: ["rare", "word", "country"],
 
   nickname: { minLength: 2, maxLength: 16 },
   leaderboardSize: 20,

@@ -75,7 +75,14 @@ async function main() {
 
       const matcher = buildMatcher(prompt);
       for (const { key, answers } of matcher.collisions) {
-        errors.push(`${where}: "${answers[0]}" and "${answers[1]}" both match the text "${key}"; remove the alias from one of them`);
+        errors.push(
+          answers[1].startsWith("reject: ")
+            ? `${where}: "${answers[1].slice(8)}" is on the reject list but is also a name for "${answers[0]}"`
+            : `${where}: "${answers[0]}" and "${answers[1]}" both match the text "${key}"; remove the alias from one of them`,
+        );
+      }
+      if (prompt.reject && (!Array.isArray(prompt.reject) || prompt.reject.some((text) => typeof text !== "string" || !text.trim()))) {
+        errors.push(`${where}: reject must be a list of non-empty strings`);
       }
       prompt.answers.forEach(([name], index) => {
         if (matcher.match(name) !== index) errors.push(`${where}: typing "${name}" does not match its own answer`);

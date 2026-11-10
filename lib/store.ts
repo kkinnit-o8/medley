@@ -51,15 +51,18 @@ export async function deleteSeedPlayers(): Promise<number> {
 
 // ------------------------------------------------------- days and puzzles
 
-/** The lineup for a day. The first caller decides it; everyone after gets the same answer. */
-export async function lineupForDay(day: string, proposed: readonly string[], at: number): Promise<string[]> {
-  await db.run(`INSERT INTO days (day, lineup, created_at) VALUES (?, ?, ?) ON CONFLICT (day) DO NOTHING`, [
+/**
+ * The lineup for a day. The first caller decides it; everyone after gets the
+ * same answer. `opened` is true for that first caller.
+ */
+export async function lineupForDay(day: string, proposed: readonly string[], at: number): Promise<{ ids: string[]; opened: boolean }> {
+  const { changes } = await db.run(`INSERT INTO days (day, lineup, created_at) VALUES (?, ?, ?) ON CONFLICT (day) DO NOTHING`, [
     day,
     JSON.stringify(proposed),
     at,
   ]);
   const row = await db.get<{ lineup: string }>(`SELECT lineup FROM days WHERE day = ?`, [day]);
-  return JSON.parse(row!.lineup);
+  return { ids: JSON.parse(row!.lineup), opened: changes === 1 };
 }
 
 export async function getPuzzle(day: string, gameId: string): Promise<unknown | undefined> {

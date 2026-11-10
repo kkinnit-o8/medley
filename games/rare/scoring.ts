@@ -13,15 +13,16 @@ export const GRACE_MS = 1500;
  * answer (0.2 = one player in five).
  */
 export const TIERS = [
-  { points: 10, minShare: 0.18, label: "Crowd favourite" },
-  { points: 25, minShare: 0.08, label: "Popular" },
-  { points: 50, minShare: 0.03, label: "Uncommon" },
-  { points: 75, minShare: 0.01, label: "Rare" },
-  { points: 100, minShare: 0, label: "Almost nobody" },
+  { points: 10, minShare: 0.18, label: "Crowd favourite", emoji: "⬜" },
+  { points: 25, minShare: 0.08, label: "Popular", emoji: "🟨" },
+  { points: 50, minShare: 0.03, label: "Uncommon", emoji: "🟧" },
+  { points: 75, minShare: 0.01, label: "Rare", emoji: "🟥" },
+  { points: 100, minShare: 0, label: "Almost nobody", emoji: "🟪" },
 ] as const;
 
-/** Points for a wrong answer or a timeout. */
+/** Points for a wrong answer or a timeout, and how it looks in the share text. */
 export const MISS_POINTS = 0;
+export const MISS_EMOJI = "⬛";
 
 /**
  * Until a prompt has this many real answers today, rarity comes only from

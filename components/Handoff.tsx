@@ -12,7 +12,6 @@ function useCountUp(target: number, duration = 700): number {
   const [value, setValue] = useState(0);
   useEffect(() => {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setValue(target);
       return;
     }

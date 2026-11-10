@@ -19,5 +19,10 @@ export type PromptDef = {
    * and "River Nile" matches "Nile". Lowercase, singular.
    */
   ignore?: string[];
+  /**
+   * Wrong answers that would otherwise be let through because they look like
+   * a right one: "Gambia" in a prompt where "Zambia" is an answer, say.
+   */
+  reject?: string[];
   answers: AnswerDef[];
 };

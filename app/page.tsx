@@ -1,12 +1,14 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { config } from "@/medley.config";
+import { ResultsPage } from "@/components/ResultsPage";
 import { RunShell } from "@/components/RunShell";
 import { Welcome } from "@/components/Welcome";
 import { now } from "@/lib/clock";
 import { dayKey, dayNumber } from "@/lib/day";
 import { suggestNickname } from "@/lib/nickname";
 import { currentPlayer, liveStreak } from "@/lib/player";
+import { getResults } from "@/lib/results";
 import { getRun, lineupFor } from "@/lib/run";
 
 /**
@@ -35,7 +37,8 @@ async function Today() {
 
   const run = await getRun(player.id, at);
   if (run.finished) {
-    return <pre className="p-4">Finished: {run.total}</pre>;
+    const results = await getResults(player, day, at);
+    if (results) return <ResultsPage key={day} results={results} nickname={player.nickname} />;
   }
   return <RunShell key={run.day} initial={run} nickname={player.nickname} streak={liveStreak(player, day)} />;
 }

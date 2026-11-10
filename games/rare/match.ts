@@ -35,10 +35,14 @@ function stem(token: string): string {
 export function tokens(input: string): string[] {
   return input
     .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[ßæœøđðþłı]/g, (c) => LETTER_MAP[c] ?? c)
-    .replace(/&|\+/g, " and ")
+    // Symbols that are part of a name: "C++", "C#", "A+", "fish & chips".
+    .replace(/\+\+/g, " plusplus ")
+    .replace(/(?<=[a-z0-9])#/g, " sharp ")
+    .replace(/&/g, " and ")
+    .replace(/\+/g, " plus ")
     .replace(/['’‘`´.]/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
@@ -48,6 +52,10 @@ export function tokens(input: string): string[] {
 
 /** The comparison key for a piece of text, or "" if nothing is left. */
 export function answerKey(input: string, ignore: ReadonlySet<string> = new Set()): string {
+  // Nothing but a symbol or two ("?", "...", "π"): the symbol itself is the answer.
+  const bare = input.normalize("NFKC").trim();
+  if (bare && [...bare].length <= 3 && !/[a-z0-9]/i.test(bare)) return `=${bare}`;
+
   const all = tokens(input);
   let kept = all.filter((t, i) => {
     if (FILLER.has(t)) return false;
@@ -61,9 +69,12 @@ export function answerKey(input: string, ignore: ReadonlySet<string> = new Set()
   return (withoutIgnored.length > 0 ? withoutIgnored : stemmed).join("");
 }
 
-/** Typos allowed for an answer of this length. Short answers must be exact. */
+/**
+ * Typos allowed for an answer whose key is this long: none for the very
+ * shortest, one up to eight letters, two beyond that.
+ */
 export function allowedTypos(length: number): number {
-  if (length <= 4) return 0;
+  if (length <= 3) return 0;
   if (length <= 8) return 1;
   return 2;
 }
@@ -95,13 +106,20 @@ export function editDistance(a: string, b: string, max: number): number {
 export type Matcher = {
   /** Index into prompt.answers, or -1 when nothing matches. */
   match(input: string): number;
-  /** Keys shared by two different answers: a content mistake. */
+  /** The same, plus which of the answer's names the input matched. Null when nothing matches. */
+  find(input: string): { index: number; matched: string } | null;
+  /** Keys shared by two different answers, or by an answer and the reject list: a content mistake. */
   collisions: { key: string; answers: [string, string] }[];
 };
 
+/** A prompt's filler words in the form answerKey() compares against. */
+export function fillerWords(prompt: PromptDef): Set<string> {
+  return new Set((prompt.ignore ?? []).map((word) => stem(tokens(word).join(""))));
+}
+
 export function buildMatcher(prompt: PromptDef): Matcher {
-  const ignore = new Set((prompt.ignore ?? []).map((w) => stem(tokens(w).join(""))));
-  const keys = new Map<string, number>();
+  const ignore = fillerWords(prompt);
+  const keys = new Map<string, { index: number; matched: string }>();
   const collisions: Matcher["collisions"] = [];
 
   prompt.answers.forEach(([name, , ...aliases], index) => {
@@ -109,42 +127,48 @@ export function buildMatcher(prompt: PromptDef): Matcher {
       const key = answerKey(text, ignore);
       if (!key) continue;
       const existing = keys.get(key);
-      if (existing === undefined) keys.set(key, index);
-      else if (existing !== index) {
-        collisions.push({ key, answers: [prompt.answers[existing][0], name] });
+      if (existing === undefined) keys.set(key, { index, matched: text });
+      else if (existing.index !== index) {
+        collisions.push({ key, answers: [prompt.answers[existing.index][0], name] });
       }
     }
   });
 
-  return {
-    collisions,
-    match(input: string): number {
-      const key = answerKey(input, ignore);
-      if (!key) return -1;
-      const exact = keys.get(key);
-      if (exact !== undefined) return exact;
+  const rejected = new Set<string>();
+  for (const text of prompt.reject ?? []) {
+    const key = answerKey(text, ignore);
+    const accepted = keys.get(key);
+    if (accepted !== undefined) collisions.push({ key, answers: [prompt.answers[accepted.index][0], `reject: ${text}`] });
+    else if (key) rejected.add(key);
+  }
 
-      const max = allowedTypos(key.length);
-      if (max === 0) return -1;
-      let best = -1;
-      let bestDistance = max + 1;
-      for (const [candidate, index] of keys) {
-        if (allowedTypos(candidate.length) === 0) continue;
-        const d = editDistance(key, candidate, Math.min(max, bestDistance));
-        if (d > max) continue;
-        // Two typos only count when the first letter is right.
-        if (d === 2 && candidate[0] !== key[0]) continue;
-        const better =
-          d < bestDistance ||
-          // Equally close to two answers: take the more popular one, so a
-          // typo can never earn more points than it deserves.
-          (d === bestDistance && best !== -1 && prompt.answers[index][1] > prompt.answers[best][1]);
-        if (better) {
-          best = index;
-          bestDistance = d;
-        }
+  function find(input: string): { index: number; matched: string } | null {
+    const key = answerKey(input, ignore);
+    if (!key || rejected.has(key)) return null;
+    const exact = keys.get(key);
+    if (exact !== undefined) return exact;
+
+    let best: { index: number; matched: string } | null = null;
+    let bestDistance = Infinity;
+    for (const [candidate, entry] of keys) {
+      const limit = allowedTypos(candidate.length);
+      if (limit === 0) continue;
+      const d = editDistance(key, candidate, limit);
+      if (d > limit) continue;
+      // Four-letter answers and two-typo matches must at least start with the right letter.
+      if ((candidate.length === 4 || d === 2) && candidate[0] !== key[0]) continue;
+      const better =
+        d < bestDistance ||
+        // Equally close to two answers: take the more popular one, so a
+        // typo can never earn more points than it deserves.
+        (d === bestDistance && best !== null && prompt.answers[entry.index][1] > prompt.answers[best.index][1]);
+      if (better) {
+        best = entry;
+        bestDistance = d;
       }
-      return best;
-    },
-  };
+    }
+    return best;
+  }
+
+  return { collisions, find, match: (input) => find(input)?.index ?? -1 };
 }

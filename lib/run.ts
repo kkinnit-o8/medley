@@ -50,9 +50,16 @@ function contextFor(day: string, gameId: string, at: number): GameContext {
   };
 }
 
+/**
+ * The games for a day, in playing order. The first time a day is opened its
+ * lineup and every game's puzzle are stored, so nothing about the day can
+ * change afterwards, even if the code or the content is updated mid-day.
+ */
 export async function lineupFor(day: string, at: number): Promise<ServerGame[]> {
-  const ids = await store.lineupForDay(day, config.lineup, at);
-  return Promise.all(ids.map(loadGame));
+  const { ids, opened } = await store.lineupForDay(day, config.lineup, at);
+  const games = await Promise.all(ids.map(loadGame));
+  if (opened) for (const game of games) await puzzleFor(day, game);
+  return games;
 }
 
 export async function puzzleFor(day: string, game: ServerGame): Promise<unknown> {
