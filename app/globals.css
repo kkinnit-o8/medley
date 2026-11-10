@@ -1,0 +1,182 @@
+@import "tailwindcss";
+@import "@fontsource-variable/archivo/wdth.css";
+
+/*
+ * Colours are plain CSS variables so light and dark are one switch.
+ * The theme follows the device unless the player picks one (data-theme on <html>).
+ */
+:root {
+  color-scheme: light;
+  --bg: oklch(0.972 0.006 85);
+  --surface: oklch(1 0 0);
+  --sunken: oklch(0.94 0.008 85);
+  --text: oklch(0.2 0.015 260);
+  --muted: oklch(0.48 0.015 260);
+  --line: oklch(0.895 0.008 85);
+  --line-strong: oklch(0.74 0.012 260);
+  --hit: oklch(0.6 0.16 150);
+  --near: oklch(0.8 0.15 88);
+  --miss: oklch(0.56 0.012 260);
+  --bad: oklch(0.55 0.2 25);
+  --on-mark: oklch(1 0 0);
+  --on-near: oklch(0.22 0.03 88);
+  /* Lightness and strength of a game's accent; the hue comes from the game. */
+  --game-l: 0.54;
+  --game-c: 0.2;
+  --on-game: oklch(1 0 0);
+  --hue: 265;
+  --game: oklch(var(--game-l) var(--game-c) var(--hue));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: oklch(0.165 0.012 260);
+    --surface: oklch(0.21 0.014 260);
+    --sunken: oklch(0.26 0.016 260);
+    --text: oklch(0.95 0.005 85);
+    --muted: oklch(0.7 0.015 260);
+    --line: oklch(0.29 0.015 260);
+    --line-strong: oklch(0.46 0.015 260);
+    --hit: oklch(0.62 0.15 150);
+    --near: oklch(0.76 0.14 88);
+    --miss: oklch(0.35 0.012 260);
+    --bad: oklch(0.72 0.17 25);
+    --game-l: 0.76;
+    --game-c: 0.14;
+    --on-game: oklch(0.165 0.012 260);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: oklch(0.165 0.012 260);
+  --surface: oklch(0.21 0.014 260);
+  --sunken: oklch(0.26 0.016 260);
+  --text: oklch(0.95 0.005 85);
+  --muted: oklch(0.7 0.015 260);
+  --line: oklch(0.29 0.015 260);
+  --line-strong: oklch(0.46 0.015 260);
+  --hit: oklch(0.62 0.15 150);
+  --near: oklch(0.76 0.14 88);
+  --miss: oklch(0.35 0.012 260);
+  --bad: oklch(0.72 0.17 25);
+  --game-l: 0.76;
+  --game-c: 0.14;
+  --on-game: oklch(0.165 0.012 260);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-hit: var(--hit);
+  --color-near: var(--near);
+  --color-miss: var(--miss);
+  --color-bad: var(--bad);
+  --color-on-mark: var(--on-mark);
+  --color-on-near: var(--on-near);
+  --color-game: var(--game);
+  --color-on-game: var(--on-game);
+  --font-sans: "Archivo Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --animate-pop: pop 0.12s ease-out;
+  --animate-shake: shake 0.4s ease-in-out;
+  --animate-rise: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-flip: flip 0.5s ease-in-out both;
+  --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+}
+
+/* Put on any element that sets --hue, so --game picks up that game's colour. */
+.hue {
+  --game: oklch(var(--game-l) var(--game-c) var(--hue));
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;
+}
+
+button:not(:disabled),
+[role="button"] {
+  cursor: pointer;
+}
+
+/* The condensed, heavy voice used for the wordmark, scores and headings. */
+.display {
+  font-stretch: 72%;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--game);
+  outline-offset: 2px;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.92); }
+  60% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-6px); }
+  40%, 60% { transform: translateX(6px); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes flip {
+  0% { transform: rotateX(0); }
+  50% { transform: rotateX(90deg); }
+  100% { transform: rotateX(0); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@keyframes drain {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+@keyframes fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Theme toggle: show the moon in light mode and the sun in dark mode. */
+.theme-icon-sun { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-icon-sun { display: block; }
+  :root:not([data-theme="light"]) .theme-icon-moon { display: none; }
+}
+:root[data-theme="dark"] .theme-icon-sun { display: block; }
+:root[data-theme="dark"] .theme-icon-moon { display: none; }
